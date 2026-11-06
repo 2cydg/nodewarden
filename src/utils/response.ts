@@ -1,3 +1,4 @@
+import { normalizeBasePath, stripBasePath } from '../../shared/base-path';
 import { LIMITS } from '../config/limits';
 import type { Env } from '../types';
 import {
@@ -39,9 +40,10 @@ function isWildcardCorsPath(path: string): boolean {
 
 function getCorsPolicy(request: Request, env: Env): { allowOrigin: string | null; allowCredentials: boolean } {
   const url = new URL(request.url);
+  const path = stripBasePath(url.pathname, normalizeBasePath(env.BASE_PATH)) ?? url.pathname;
   const originHeader = request.headers.get('Origin');
   if (!originHeader) {
-    return isWildcardCorsPath(url.pathname)
+    return isWildcardCorsPath(path)
       ? { allowOrigin: '*', allowCredentials: false }
       : { allowOrigin: null, allowCredentials: false };
   }
@@ -55,7 +57,7 @@ function getCorsPolicy(request: Request, env: Env): { allowOrigin: string | null
   ) {
     return { allowOrigin: origin, allowCredentials: true };
   }
-  if (isWildcardCorsPath(url.pathname)) {
+  if (isWildcardCorsPath(path)) {
     return { allowOrigin: '*', allowCredentials: false };
   }
   return { allowOrigin: null, allowCredentials: false };
@@ -106,7 +108,7 @@ export function applyCors(
   // Security headers applied to every response.
   headers.set('X-Content-Type-Options', 'nosniff');
   headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
-  const isWebAuthnFrameConnector = new URL(request.url).pathname === '/webauthn-connector.html';
+  const isWebAuthnFrameConnector = stripBasePath(new URL(request.url).pathname, normalizeBasePath(env.BASE_PATH)) === '/webauthn-connector.html';
   if (isWebAuthnFrameConnector) {
     // Official desktop and browser clients render this exact endpoint inside a
     // 40px cross-origin iframe. The connector validates its parent before any

@@ -1,3 +1,4 @@
+import { basePath } from '@/lib/base-path';
 import { useEffect, useMemo, useRef, useState } from 'preact/hooks';
 import { CheckCheck, ChevronLeft, Copy, Eye, EyeOff, File, FileText, LayoutGrid, Lock, Pencil, Plus, RefreshCw, Save, Send as SendIcon, Trash2, X } from 'lucide-preact';
 import { copyTextToClipboard } from '@/lib/clipboard';
@@ -236,10 +237,10 @@ export default function SendsPage(props: SendsPageProps) {
   function getAccessUrl(send: Send): string {
     const rawUrl = send.shareUrl || `/send/${send.accessId}`;
     if (/^https?:\/\//i.test(rawUrl)) return rawUrl;
-    if (rawUrl.startsWith('/#/')) return `${window.location.origin}${rawUrl}`;
-    if (rawUrl.startsWith('#/')) return `${window.location.origin}/${rawUrl}`;
-    if (rawUrl.startsWith('/')) return `${window.location.origin}/#${rawUrl}`;
-    return `${window.location.origin}/#/${rawUrl.replace(/^\/+/, '')}`;
+    if (rawUrl.startsWith('/#/')) return `${window.location.origin + basePath}${rawUrl}`;
+    if (rawUrl.startsWith('#/')) return `${window.location.origin + basePath}/${rawUrl}`;
+    if (rawUrl.startsWith('/')) return `${window.location.origin + basePath}/#${rawUrl}`;
+    return `${window.location.origin + basePath}/#/${rawUrl.replace(/^\/+/, '')}`;
   }
 
   function copyAccessUrl(send: Send): void {

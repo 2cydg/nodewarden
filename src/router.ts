@@ -1,4 +1,5 @@
 import { Env } from './types';
+import { normalizeBasePath, stripBasePath } from '../shared/base-path';
 import { AuthService } from './services/auth';
 import { RateLimitService, getClientIdentifier } from './services/ratelimit';
 import { handleCors, errorResponse } from './utils/response';
@@ -103,7 +104,7 @@ async function enforceRequestBodyLimit(
 
 export async function handleRequest(request: Request, env: Env): Promise<Response> {
   const url = new URL(request.url);
-  const path = url.pathname;
+  const path = stripBasePath(url.pathname, normalizeBasePath(env.BASE_PATH)) ?? url.pathname;
   const method = request.method;
   const clientId = getClientIdentifier(request);
 

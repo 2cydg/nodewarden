@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'preact/hooks';
 import { useLocation } from 'wouter';
+import { appPath, basePath } from './lib/base-path';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import AppAuthenticatedShell from '@/components/AppAuthenticatedShell';
 import AppGlobalOverlays, { type AppConfirmState } from '@/components/AppGlobalOverlays';
@@ -336,7 +337,7 @@ export default function App() {
     setPhase('register');
     if (location !== '/register') navigate('/register');
     if (typeof window !== 'undefined' && typeof window.history?.replaceState === 'function') {
-      window.history.replaceState(null, '', '/register');
+      window.history.replaceState(null, '', appPath('/register'));
     }
     setInviteCodeFromUrl('');
   }, [inviteCodeFromUrl, phase, location, navigate]);
@@ -1422,14 +1423,14 @@ export default function App() {
             sends: encryptedSends,
             symEncKeyB64: session.symEncKey!,
             symMacKeyB64: session.symMacKey!,
-            origin: window.location.origin,
+            origin: window.location.origin + basePath,
           });
         } catch {
           sends = await decryptSends({
             sends: encryptedSends,
             symEncKeyB64: session.symEncKey!,
             symMacKeyB64: session.symMacKey!,
-            origin: window.location.origin,
+            origin: window.location.origin + basePath,
           });
         }
 
@@ -1638,7 +1639,7 @@ export default function App() {
         sends: [encrypted],
         symEncKeyB64: session.symEncKey,
         symMacKeyB64: session.symMacKey,
-        origin: window.location.origin,
+        origin: window.location.origin + basePath,
       });
       const decrypted = sends[0];
       if (decrypted) setDecryptedSends((current) => upsertById(current, decrypted));
@@ -1691,7 +1692,7 @@ export default function App() {
         const negotiation = (await negotiateResponse.json()) as { connectionToken?: string };
         if (!negotiation.connectionToken || disposed) throw new Error('Notification connection token missing');
 
-        const hubUrl = new URL('/notifications/hub', window.location.origin);
+        const hubUrl = new URL(appPath('/notifications/hub'), window.location.origin);
         hubUrl.searchParams.set('id', negotiation.connectionToken);
         hubUrl.protocol = hubUrl.protocol === 'https:' ? 'wss:' : 'ws:';
         socket = new WebSocket(hubUrl.toString());
@@ -1987,7 +1988,7 @@ export default function App() {
     if (!hashPath.startsWith('/')) return;
     if (normalizedHashPath !== DEVICE_MANAGEMENT_ROUTE && normalizedHashPath !== LEGACY_DEVICE_MANAGEMENT_ROUTE) return;
     if (typeof window !== 'undefined' && typeof window.history?.replaceState === 'function') {
-      window.history.replaceState(null, '', DEVICE_MANAGEMENT_ROUTE);
+      window.history.replaceState(null, '', appPath(DEVICE_MANAGEMENT_ROUTE));
     }
     if (location !== DEVICE_MANAGEMENT_ROUTE) navigate(DEVICE_MANAGEMENT_ROUTE);
   }, [phase, hashPath, normalizedHashPath, location, navigate]);

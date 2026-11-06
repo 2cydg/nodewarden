@@ -1,3 +1,4 @@
+import { basePath } from '@/lib/base-path';
 import { useMemo, useState } from 'preact/hooks';
 import { cipherFieldMetadata } from '@/lib/cipher-fields';
 import type { ImportAttachmentFile, ImportResultSummary } from '@/components/ImportPage';
@@ -970,7 +971,7 @@ export default function useVaultSendActions(options: UseVaultSendActionsOptions)
           void refreshVaultRevisionStamp();
           if (autoCopyLink && created.key && session.symEncKey && session.symMacKey) {
             const keyPart = await buildSendShareKey(created.key, session.symEncKey, session.symMacKey);
-            const shareUrl = buildPublicSendUrl(window.location.origin, created.accessId, keyPart);
+            const shareUrl = buildPublicSendUrl(window.location.origin + basePath, created.accessId, keyPart);
             await navigator.clipboard.writeText(shareUrl);
           }
           onNotify('success', t('txt_send_created'));
@@ -997,7 +998,7 @@ export default function useVaultSendActions(options: UseVaultSendActionsOptions)
           void refreshVaultRevisionStamp();
           if (autoCopyLink && updated.key && session.symEncKey && session.symMacKey) {
             const keyPart = await buildSendShareKey(updated.key, session.symEncKey, session.symMacKey);
-            const shareUrl = buildPublicSendUrl(window.location.origin, updated.accessId, keyPart);
+            const shareUrl = buildPublicSendUrl(window.location.origin + basePath, updated.accessId, keyPart);
             await navigator.clipboard.writeText(shareUrl);
           }
           onNotify('success', t('txt_send_updated'));

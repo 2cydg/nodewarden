@@ -1,3 +1,4 @@
+import { publicBasePath } from '../utils/public-url';
 import { Env, SendType } from '../types';
 import { StorageService } from '../services/storage';
 import { RateLimitService, getClientIdentifier } from '../services/ratelimit';
@@ -176,7 +177,7 @@ export async function handleAccessSendFile(
 
   const token = await createSendFileDownloadToken(send.id, fileId, secret);
   const url = new URL(request.url);
-  const downloadUrl = `${url.origin}/api/sends/${send.id}/${fileId}?t=${token}`;
+  const downloadUrl = `${url.origin}${publicBasePath(request)}/api/sends/${send.id}/${fileId}?t=${token}`;
 
   return jsonResponse({
     object: 'send-fileDownload',
@@ -257,7 +258,7 @@ export async function handleAccessSendFileV2(request: Request, env: Env, fileId:
 
   const downloadToken = await createSendFileDownloadToken(send.id, fileId, jwt.secret);
   const url = new URL(request.url);
-  const downloadUrl = `${url.origin}/api/sends/${send.id}/${fileId}?t=${downloadToken}`;
+  const downloadUrl = `${url.origin}${publicBasePath(request)}/api/sends/${send.id}/${fileId}?t=${downloadToken}`;
 
   return jsonResponse({
     object: 'send-fileDownload',

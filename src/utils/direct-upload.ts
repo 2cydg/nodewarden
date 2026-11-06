@@ -1,4 +1,5 @@
 import { LIMITS } from '../config/limits';
+import { publicBasePath } from './public-url';
 import { Env } from '../types';
 import { errorResponse } from './response';
 
@@ -25,7 +26,7 @@ export function buildDirectUploadUrl(request: Request, path: string, token: stri
   const version = '2023-11-03';
   const expiresAt = '2099-12-31T23:59:59Z';
   const origin = new URL(request.url).origin;
-  return `${origin}${path}?sv=${encodeURIComponent(version)}&se=${encodeURIComponent(expiresAt)}&token=${encodeURIComponent(token)}`;
+  return `${origin}${publicBasePath(request)}${path}?sv=${encodeURIComponent(version)}&se=${encodeURIComponent(expiresAt)}&token=${encodeURIComponent(token)}`;
 }
 
 export function getSafeJwtSecret(env: Env): string | null {

@@ -1,4 +1,5 @@
 import { Env } from './types';
+import { normalizeBasePath, stripBasePath } from '../shared/base-path';
 import { NotificationsHub } from './durable/notifications-hub';
 import { BackupTransferRunner } from './durable/backup-transfer-runner';
 import { handleRequest } from './router';
@@ -43,14 +44,38 @@ function addSearchIndexHeaders(request: Request, response: Response): Response {
   });
 }
 
-async function maybeServeAsset(request: Request, env: Env): Promise<Response | null> {
+async function maybeServeAsset(request: Request, env: Env, base: string): Promise<Response | null> {
   if (!env.ASSETS) return null;
   if (request.method !== 'GET' && request.method !== 'HEAD') return null;
   const url = new URL(request.url);
-  if (isBackendRequestPath(url.pathname)) return null;
+  const path = stripBasePath(url.pathname, base)!;
+  if (isBackendRequestPath(path)) return null;
 
-  const response = await env.ASSETS.fetch(request);
-  return addSearchIndexHeaders(request, response);
+  url.pathname = path;
+  const response = await env.ASSETS.fetch(new Request(url.toString(), request));
+  if (!response.ok || request.method === 'HEAD') return addSearchIndexHeaders(request, response);
+  const type = response.headers.get('Content-Type') || '';
+  let body: string | null = null;
+  if (type.includes('text/html')) {
+    body = (await response.text()).replace(/(src|href)=(['"])(?:\/(?!\/)|\.\/)/g, `$1=$2${base}/`);
+    body = body.replace('</head>', `<meta name="nodewarden-base-path" content="${base}"></head>`);
+  } else if (base && path === '/manifest.webmanifest') {
+    const manifest = await response.json() as Record<string, unknown>;
+    const prefix = (value: unknown): unknown => typeof value === 'string' && value.startsWith('/') ? base + value : value;
+    for (const key of ['id', 'start_url', 'scope']) manifest[key] = prefix(manifest[key]);
+    for (const key of ['icons', 'shortcuts']) {
+      for (const item of (manifest[key] as Record<string, unknown>[] || [])) {
+        item.src = prefix(item.src); item.url = prefix(item.url);
+        for (const icon of (item.icons as Record<string, unknown>[] || [])) icon.src = prefix(icon.src);
+      }
+    }
+    body = JSON.stringify(manifest);
+  }
+  if (body === null) return addSearchIndexHeaders(request, response);
+  const headers = new Headers(response.headers);
+  headers.delete('Content-Length'); headers.delete('ETag');
+  headers.set('Cache-Control', 'no-store');
+  return addSearchIndexHeaders(request, new Response(body, { status: response.status, headers }));
 }
 
 async function ensureDatabaseInitialized(env: Env): Promise<void> {
@@ -78,14 +103,26 @@ async function ensureDatabaseInitialized(env: Env): Promise<void> {
 export default {
   async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
     void ctx;
-    const normalizedRequest = normalizeRequestUrl(request);
-    const requestPath = new URL(normalizedRequest.url).pathname;
+    let base: string;
+    try { base = normalizeBasePath(env.BASE_PATH); } catch {
+      return new Response('Invalid BASE_PATH configuration', { status: 500 });
+    }
+    const publicPath = new URL(request.url).pathname;
+    const requestPath = stripBasePath(publicPath, base);
+    if (requestPath === null) return new Response('Not Found', { status: 404 });
+    if (base && publicPath === base && request.method === 'GET') {
+      const url = new URL(request.url); url.pathname += '/';
+      return Response.redirect(url.toString(), 308);
+    }
+    const headers = new Headers(request.headers);
+    headers.set('X-NodeWarden-Base-Path', base);
+    const normalizedRequest = normalizeRequestUrl(new Request(request, { headers }));
 
     if (isWebVaultHidden(env) && !isBackendRequestPath(requestPath)) {
       return webVaultNotFoundResponse(normalizedRequest);
     }
 
-    const assetResponse = await maybeServeAsset(normalizedRequest, env);
+    const assetResponse = await maybeServeAsset(normalizedRequest, env, base);
     if (assetResponse) {
       return applyCors(normalizedRequest, assetResponse, env);
     }

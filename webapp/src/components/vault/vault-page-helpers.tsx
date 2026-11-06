@@ -1,3 +1,4 @@
+import { appPath } from '@/lib/base-path';
 import { useMemo } from 'preact/hooks';
 import { cipherFieldMetadata } from '@/lib/cipher-fields';
 import {
@@ -136,7 +137,7 @@ export function CardBrandIcon({ brand }: { brand?: string | null }) {
   return (
     <span className={`card-brand-icon card-brand-${key}`} aria-label={label} title={label}>
       {logoSlug ? (
-        <img src={`/payment-logos/cards/${logoSlug}.svg`} alt="" loading="lazy" decoding="async" />
+        <img src={appPath(`/payment-logos/cards/${logoSlug}.svg`)} alt="" loading="lazy" decoding="async" />
       ) : (
         <CreditCard size={18} />
       )}

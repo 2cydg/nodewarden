@@ -1,3 +1,4 @@
+import { appPath } from './base-path';
 import type { Cipher } from './types';
 
 export function firstCipherUri(cipher: Cipher): string {
@@ -20,5 +21,5 @@ export function hostFromUri(uri: string): string {
 }
 
 export function websiteIconUrl(host: string): string {
-  return `/icons/${encodeURIComponent(host)}/icon.png?fallback=404`;
+  return appPath(`/icons/${encodeURIComponent(host)}/icon.png?fallback=404`);
 }

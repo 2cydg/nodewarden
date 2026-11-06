@@ -1,3 +1,4 @@
+import { publicBasePath } from '../utils/public-url';
 import {
   Env,
   Cipher,
@@ -37,6 +38,7 @@ import { readNullableFullUpdateField } from './cipher-full-update';
 export interface CipherResponseOptions {
   preserveRepairableUris?: boolean;
   validFolderIds?: ReadonlySet<string>;
+  basePath?: string;
 }
 
 export function shouldPreserveRepairableCipherUris(request: Request): boolean {
@@ -44,7 +46,7 @@ export function shouldPreserveRepairableCipherUris(request: Request): boolean {
 }
 
 function cipherResponseOptionsForRequest(request: Request): CipherResponseOptions {
-  return { preserveRepairableUris: shouldPreserveRepairableCipherUris(request) };
+  return { preserveRepairableUris: shouldPreserveRepairableCipherUris(request), basePath: publicBasePath(request) };
 }
 
 function normalizeOptionalId(value: unknown): string | null {
@@ -528,7 +530,7 @@ function normalizeCipherSecureNoteForCompatibility(secureNote: any): CipherSecur
 }
 
 // Format attachments for API response
-export function formatAttachments(attachments: Attachment[]): any[] | null {
+export function formatAttachments(attachments: Attachment[], basePath = ''): any[] | null {
   if (attachments.length === 0) return null;
   const formatted = attachments
     .filter((a) => isValidEncString(a.fileName))
@@ -539,7 +541,7 @@ export function formatAttachments(attachments: Attachment[]): any[] | null {
       size: String(Number(a.size) || 0),
       sizeName: a.sizeName,
       key: optionalEncString(a.key),
-      url: `/api/ciphers/${a.cipherId}/attachment/${a.id}`,  // Android requires non-null url!
+      url: `${basePath}/api/ciphers/${a.cipherId}/attachment/${a.id}`,  // Android requires non-null url!
       object: 'attachment',
     }));
   return formatted.length ? formatted : null;
@@ -846,7 +848,7 @@ export function cipherToResponse(
     permissions: responsePermissions,
     object: 'cipherDetails',
     collectionIds: Array.isArray((passthrough as any).collectionIds) ? (passthrough as any).collectionIds : [],
-    attachments: formatAttachments(responseAttachments),
+    attachments: formatAttachments(responseAttachments, options.basePath),
     name: isValidEncString(cipher.name) ? cipher.name.trim() : cipher.name,
     notes: optionalEncString(cipher.notes),
     login: normalizedLogin,

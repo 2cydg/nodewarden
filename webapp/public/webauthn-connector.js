@@ -157,7 +157,7 @@ export function resolveParentChannel(request, connectorOrigin, allowedOrigins = 
 
 async function loadAllowedParentOrigins() {
   try {
-    const response = await fetch('/api/web-bootstrap', {
+    const response = await fetch((document.querySelector('meta[name=nodewarden-base-path]')?.content || '') + '/api/web-bootstrap', {
       headers: { Accept: 'application/json' },
       credentials: 'omit',
     });

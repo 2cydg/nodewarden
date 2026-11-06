@@ -1,3 +1,4 @@
+import { publicBasePath } from '../utils/public-url';
 import { Env, Attachment, Cipher } from '../types';
 import { notifyUserCipherUpdate, notifyUserVaultSync } from '../durable/notifications-hub';
 import { StorageService } from '../services/storage';
@@ -329,7 +330,7 @@ export async function handleGetAttachment(
   
   // Generate download URL with token
   const url = new URL(request.url);
-  const downloadUrl = `${url.origin}/api/attachments/${cipherId}/${attachmentId}?token=${token}`;
+  const downloadUrl = `${url.origin}${publicBasePath(request)}/api/attachments/${cipherId}/${attachmentId}?token=${token}`;
 
   return jsonResponse({
     object: 'attachment',

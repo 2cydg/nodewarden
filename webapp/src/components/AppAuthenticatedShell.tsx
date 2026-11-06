@@ -1,3 +1,4 @@
+import { appPath } from '@/lib/base-path';
 import { ArrowUpDown, ChevronDown, Clock3, Cloud, FileClock, Folder as FolderIcon, KeyRound, Lock, LogOut, MonitorSmartphone, Send as SendIcon, Settings as SettingsIcon, ShieldCheck, ShieldUser, Sparkles, Users } from 'lucide-preact';
 import type { ComponentChildren } from 'preact';
 import { useState } from 'preact/hooks';
@@ -172,7 +173,7 @@ export default function AppAuthenticatedShell(props: AppAuthenticatedShellProps)
       <div className="app-shell">
         <header className="topbar">
           <div className="brand">
-            <img src="/nodewarden-logo.svg" alt="NodeWarden logo" className="brand-logo" />
+            <img src={appPath('/nodewarden-logo.svg')} alt="NodeWarden logo" className="brand-logo" />
             <span className="brand-wordmark" role="img" aria-label="NodeWarden" />
             <span className="mobile-page-title">{props.currentPageTitle}</span>
           </div>

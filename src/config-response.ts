@@ -5,7 +5,7 @@ function buildIconServiceTemplate(origin: string): string {
 }
 
 function buildIconServiceCsp(origin: string): string {
-  return `img-src 'self' data: ${origin}`;
+  return `img-src 'self' data: ${new URL(origin).origin}`;
 }
 
 export function buildConfigResponse(origin: string) {

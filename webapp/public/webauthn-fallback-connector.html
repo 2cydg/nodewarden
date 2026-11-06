@@ -249,7 +249,7 @@
 
         function allowedParentOrigins() {
           if (allowedParentOriginsPromise) return allowedParentOriginsPromise;
-          allowedParentOriginsPromise = fetch("/api/web-bootstrap", {
+          allowedParentOriginsPromise = fetch((document.querySelector("meta[name=nodewarden-base-path]")?.content || "") + "/api/web-bootstrap", {
             headers: { Accept: "application/json" },
             credentials: "omit",
           }).then(function (response) {

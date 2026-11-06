@@ -37,6 +37,7 @@ import { StorageService } from './services/storage';
 import type { Env } from './types';
 import { getConfiguredWebAuthnAllowedOrigins } from './utils/origins';
 import { buildConfigResponse } from './config-response';
+import { normalizeBasePath } from '../shared/base-path';
 
 type PublicRateLimiter = (category?: string, maxRequests?: number) => Promise<Response | null>;
 type JwtUnsafeReason = 'missing' | 'too_short' | null;
@@ -478,7 +479,7 @@ export async function handlePublicRoute(
   if ((path === '/config' || path === '/api/config') && method === 'GET') {
     const blocked = await enforcePublicRateLimit('public-read', LIMITS.rateLimit.publicReadRequestsPerMinute);
     if (blocked) return blocked;
-    const origin = new URL(request.url).origin;
+    const origin = new URL(request.url).origin + normalizeBasePath(env.BASE_PATH);
     return jsonResponse(buildConfigResponse(origin), 200, { 'Cache-Control': 'no-store' });
   }
 

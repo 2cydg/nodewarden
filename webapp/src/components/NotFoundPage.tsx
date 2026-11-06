@@ -1,3 +1,4 @@
+import { appPath } from '@/lib/base-path';
 import { Home } from 'lucide-preact';
 import { t } from '@/lib/i18n';
 
@@ -12,7 +13,7 @@ export default function NotFoundPage(props: NotFoundPageProps) {
     <main className="not-found-page">
       <section className="not-found-shell" aria-labelledby="not-found-title">
         <div className="not-found-brand">
-          <img src="/nodewarden-logo.svg" alt="NodeWarden logo" className="not-found-logo" />
+          <img src={appPath('/nodewarden-logo.svg')} alt="NodeWarden logo" className="not-found-logo" />
           <span className="not-found-wordmark" aria-label="NodeWarden" role="img" />
         </div>
         <div className="not-found-copy">

@@ -8,15 +8,17 @@ import { defineConfig, type Plugin } from 'vite';
 const rootDir = fileURLToPath(new URL('.', import.meta.url));
 
 function buildServiceWorkerSource(precacheUrls: string[], version: string): string {
-  return `const CACHE_VERSION = ${JSON.stringify(`nodewarden-pwa-${version}`)};
+  return `const CACHE_VERSION = ${JSON.stringify(`nodewarden-pwa-${version}`)} + '-' + encodeURIComponent(new URL(self.registration.scope).pathname);
+const BASE_PATH = new URL(self.registration.scope).pathname.replace(/\\/$/, '');
+const publicPath = (path) => BASE_PATH + path;
 const APP_SHELL_CACHE = \`\${CACHE_VERSION}-shell\`;
-const RUNTIME_CACHE = 'nodewarden-pwa-runtime-v1';
+const RUNTIME_CACHE = 'nodewarden-pwa-runtime-v1-' + BASE_PATH;
 
-const PRECACHE_URLS = ${JSON.stringify(precacheUrls, null, 2)};
-const CRITICAL_SHELL_URLS = ['/', '/index.html'];
+const PRECACHE_URLS = ${JSON.stringify(precacheUrls, null, 2)}.map(publicPath);
+const CRITICAL_SHELL_URLS = ['/', '/index.html'].map(publicPath);
 const STATIC_PATH_RE = /^\\/(?:assets\\/|payment-logos\\/|icon-|logo-|favicon|apple-touch-icon|nodewarden-|manifest\\.webmanifest$)/;
 const NEVER_CACHE_PATH_RE = /^\\/(?:api|identity|setup|config|notifications|icons|\\.well-known|cdn-cgi)(?:\\/|$)/;
-const OFFLINE_FALLBACK_HTML = '<!doctype html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>NodeWarden</title><style>html,body{height:100%;margin:0;background:#eef4ff;color:#0f172a;font-family:ui-sans-serif,system-ui,sans-serif}.boot-screen{min-height:100%;display:grid;place-items:center;padding:24px;box-sizing:border-box}.boot-card{width:min(420px,100%);display:grid;gap:12px;justify-items:center;padding:28px;border:1px solid rgba(148,163,184,.35);border-radius:22px;background:rgba(255,255,255,.86);box-shadow:0 20px 45px rgba(15,23,42,.1)}.boot-logo{width:74px;height:58px;object-fit:contain}.boot-title{font-weight:700}.boot-sub{color:#475569;text-align:center;font-size:14px;line-height:1.5}</style></head><body><div class="boot-screen"><div class="boot-card"><img class="boot-logo" src="/nodewarden-logo.svg" alt=""><div class="boot-title">NodeWarden</div><div class="boot-sub">Offline cache is not ready on this device. Open NodeWarden once while online, then try offline again.</div></div></div></body></html>';
+const OFFLINE_FALLBACK_HTML = '<!doctype html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>NodeWarden</title><style>html,body{height:100%;margin:0;background:#eef4ff;color:#0f172a;font-family:ui-sans-serif,system-ui,sans-serif}.boot-screen{min-height:100%;display:grid;place-items:center;padding:24px;box-sizing:border-box}.boot-card{width:min(420px,100%);display:grid;gap:12px;justify-items:center;padding:28px;border:1px solid rgba(148,163,184,.35);border-radius:22px;background:rgba(255,255,255,.86);box-shadow:0 20px 45px rgba(15,23,42,.1)}.boot-logo{width:74px;height:58px;object-fit:contain}.boot-title{font-weight:700}.boot-sub{color:#475569;text-align:center;font-size:14px;line-height:1.5}</style></head><body><div class="boot-screen"><div class="boot-card"><img class="boot-logo" src="' + publicPath('/nodewarden-logo.svg') + '" alt=""><div class="boot-title">NodeWarden</div><div class="boot-sub">Offline cache is not ready on this device. Open NodeWarden once while online, then try offline again.</div></div></div></body></html>';
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
@@ -35,7 +37,7 @@ self.addEventListener('activate', (event) => {
     caches.keys()
       .then((keys) => Promise.all(
         keys
-          .filter((key) => key.startsWith('nodewarden-pwa-') && key.endsWith('-shell') && key !== APP_SHELL_CACHE)
+          .filter((key) => key.startsWith('nodewarden-pwa-') && key.endsWith('-' + encodeURIComponent(new URL(self.registration.scope).pathname) + '-shell') && key !== APP_SHELL_CACHE)
           .map((key) => caches.delete(key))
       ))
       .then(() => self.clients.claim())
@@ -57,8 +59,8 @@ async function refreshNavigationCache(request) {
   try {
     const response = await fetch(request);
     if (isCacheableResponse(response)) {
-      await cache.put('/', response.clone());
-      await cache.put('/index.html', response.clone());
+      await cache.put(publicPath('/'), response.clone());
+      await cache.put(publicPath('/index.html'), response.clone());
       await warmStaticDependencies(response.clone());
     }
     return response;
@@ -79,7 +81,7 @@ async function warmStaticDependencies(response) {
           return null;
         }
       })
-      .filter((url) => url && url.origin === self.location.origin && STATIC_PATH_RE.test(url.pathname))
+      .filter((url) => url && url.origin === self.location.origin && STATIC_PATH_RE.test(url.pathname.slice(BASE_PATH.length)))
       .map((url) => url.pathname + url.search);
     await Promise.allSettled(Array.from(new Set(urls)).map((url) => runtimeCache.add(url)));
     await trimRuntimeCache(runtimeCache, 120);
@@ -94,8 +96,8 @@ async function appShellNavigation(request) {
   return (
     (await cache.match(request, { ignoreSearch: true }))
     || (await cache.match(url.pathname, { ignoreSearch: true }))
-    || (await cache.match('/'))
-    || (await cache.match('/index.html'))
+    || (await cache.match(publicPath('/')))
+    || (await cache.match(publicPath('/index.html')))
     || new Response(OFFLINE_FALLBACK_HTML, {
       status: 200,
       headers: { 'Content-Type': 'text/html; charset=UTF-8' },
@@ -166,7 +168,7 @@ self.addEventListener('fetch', (event) => {
   if (!isSameOriginHttpGet(request)) return;
 
   const url = new URL(request.url);
-  if (NEVER_CACHE_PATH_RE.test(url.pathname)) return;
+  if (NEVER_CACHE_PATH_RE.test(url.pathname.slice(BASE_PATH.length))) return;
 
   // Connector navigations are protocol pages, not application routes. They must
   // never be replaced with the SPA shell, even when the device is offline.
@@ -183,7 +185,7 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  if (STATIC_PATH_RE.test(url.pathname) || request.destination === 'script' || request.destination === 'style' || request.destination === 'font' || request.destination === 'image' || request.destination === 'worker') {
+  if (STATIC_PATH_RE.test(url.pathname.slice(BASE_PATH.length)) || request.destination === 'script' || request.destination === 'style' || request.destination === 'font' || request.destination === 'image' || request.destination === 'worker') {
     event.respondWith(cacheFirst(request));
   }
 });
@@ -264,6 +266,7 @@ export default defineConfig(({ mode }) => {
 
   return {
     root: rootDir,
+    base: isDemo ? '/' : './',
     plugins: [preact(), tailwindcss(), searchIndexPolicyPlugin(isDemo), pwaServiceWorkerPlugin(isDemo)],
     define: {
       __NODEWARDEN_DEMO__: JSON.stringify(isDemo),

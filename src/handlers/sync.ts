@@ -1,3 +1,4 @@
+import { normalizeBasePath } from '../../shared/base-path';
 import { Env, SyncResponse, CipherResponse, FolderResponse, ProfileResponse } from '../types';
 import { StorageService } from '../services/storage';
 import { errorResponse } from '../utils/response';
@@ -28,7 +29,7 @@ function buildSyncCacheRequest(
 ): Request {
   const url = new URL(request.url);
   const cacheUrl = new URL(
-    `/__nodewarden/cache/sync/${encodeURIComponent(userId)}/${encodeURIComponent(revisionDate)}/${encodeURIComponent(accountPasskeyCacheTag)}/${excludeDomains ? '1' : '0'}/${excludeSends ? '1' : '0'}/${preserveRepairableUris ? '1' : '0'}`,
+    `/__nodewarden/cache/sync/${encodeURIComponent(request.headers.get('X-NodeWarden-Base-Path') || '')}/${encodeURIComponent(userId)}/${encodeURIComponent(revisionDate)}/${encodeURIComponent(accountPasskeyCacheTag)}/${excludeDomains ? '1' : '0'}/${excludeSends ? '1' : '0'}/${preserveRepairableUris ? '1' : '0'}`,
     url.origin
   );
   return new Request(cacheUrl.toString(), { method: 'GET' });
@@ -94,7 +95,7 @@ export async function handleSync(request: Request, env: Env, userId: string): Pr
 
   const cipherResponses: CipherResponse[] = [];
   for (const cipher of ciphers) {
-    const response = cipherToResponse(cipher, attachmentsByCipher.get(cipher.id) || [], { preserveRepairableUris, validFolderIds });
+    const response = cipherToResponse(cipher, attachmentsByCipher.get(cipher.id) || [], { preserveRepairableUris, validFolderIds, basePath: normalizeBasePath(env.BASE_PATH) });
     if (isCipherResponseSyncCompatible(response)) {
       cipherResponses.push(response);
     }

@@ -1,3 +1,4 @@
+import { normalizeBasePath, stripBasePath } from '../../shared/base-path';
 import { AuthService } from '../services/auth';
 import { StorageService } from '../services/storage';
 import { isAuthRequestExpired } from '../services/storage-auth-request-repo';
@@ -114,6 +115,7 @@ export async function handleNotificationsHub(request: Request, env: Env): Promis
   const id = env.NOTIFICATIONS_HUB.idFromName(userId);
   const stub = env.NOTIFICATIONS_HUB.get(id);
   const forwardedUrl = new URL(request.url);
+  forwardedUrl.pathname = stripBasePath(forwardedUrl.pathname, normalizeBasePath(env.BASE_PATH)) || forwardedUrl.pathname;
   forwardedUrl.searchParams.set('nw_uid', userId);
   if (payload.did) {
     forwardedUrl.searchParams.set('nw_did', payload.did);
@@ -138,6 +140,7 @@ export async function handleAnonymousNotificationsHub(request: Request, env: Env
   const id = env.NOTIFICATIONS_HUB.idFromName(authRequestId);
   const stub = env.NOTIFICATIONS_HUB.get(id);
   const forwardedUrl = new URL(request.url);
+  forwardedUrl.pathname = stripBasePath(forwardedUrl.pathname, normalizeBasePath(env.BASE_PATH)) || forwardedUrl.pathname;
   forwardedUrl.searchParams.set('nw_auth_request_id', authRequestId);
   return stub.fetch(new Request(forwardedUrl.toString(), request));
 }

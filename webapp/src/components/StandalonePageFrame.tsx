@@ -1,3 +1,4 @@
+import { appPath } from '@/lib/base-path';
 import type { ComponentChildren } from 'preact';
 import { APP_VERSION } from '@shared/app-version';
 
@@ -12,7 +13,7 @@ export default function StandalonePageFrame(props: StandalonePageFrameProps) {
   return (
     <div className="standalone-shell">
       <div className="standalone-brand standalone-brand-outside">
-        <img src="/nodewarden-logo.svg" alt="NodeWarden logo" className="standalone-brand-logo" />
+        <img src={appPath('/nodewarden-logo.svg')} alt="NodeWarden logo" className="standalone-brand-logo" />
         <div>
           <span className="standalone-brand-wordmark" role="img" aria-label="NodeWarden" />
         </div>

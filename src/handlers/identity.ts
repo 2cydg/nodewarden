@@ -1,3 +1,4 @@
+import { publicBasePath } from '../utils/public-url';
 import { Env, TokenResponse, User } from '../types';
 import { StorageService } from '../services/storage';
 import { AuthService } from '../services/auth';
@@ -166,7 +167,7 @@ function buildRefreshCookie(request: Request, refreshToken: string, maxAgeSecond
   const isHttps = new URL(request.url).protocol === 'https:';
   const parts = [
     `${WEB_REFRESH_COOKIE}=${encodeURIComponent(refreshToken)}`,
-    'Path=/identity/connect',
+    `Path=${publicBasePath(request)}/identity/connect`,
     'HttpOnly',
     'SameSite=Strict',
     `Max-Age=${Math.max(0, Math.floor(maxAgeSeconds))}`,
