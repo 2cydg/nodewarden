@@ -1,6 +1,8 @@
 name = "nodewarden"
 main = "src/index.ts"
 compatibility_date = "2024-01-01"
+# Preserve dashboard-managed variables (for example BASE_PATH) across deploys.
+keep_vars = true
 
 [build]
 command = "npm run build"
